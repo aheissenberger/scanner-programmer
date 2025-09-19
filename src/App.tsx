@@ -1,6 +1,6 @@
 import BarcodeComponent from 'react-barcode';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Card } from "./components/ui/card";
@@ -17,6 +17,7 @@ function App() {
   const [programmMode, setProgrammMode] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [showEmpty, setShowEmpty] = useState(false);
   const programmTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Ignore key events in programm mode
@@ -48,22 +49,6 @@ function App() {
     setPaused(false);
   };
 
-  // Show next barcode
-  const nextBarcode = (idx: number) => {
-    setCurrentIdx(idx + 1);
-    const ms = Math.max(1, Math.min(delay, 30)) * 1000;
-    if (idx < barcodes.length - 1) {
-      programmTimer.current = setTimeout(() => {
-        if (!paused) {
-          nextBarcode(idx + 1);
-        }
-      }, ms);
-    } else {
-      // After last barcode, show empty content and wait for user to stop
-      setCurrentIdx(barcodes.length + 1); // out of bounds means empty
-    }
-  };
-  // Load from localStorage on mount
   const [barcodes, setBarcodes] = useState<Barcode[]>(() => {
     const saved = localStorage.getItem('barcode-list');
     if (saved) {
@@ -92,11 +77,6 @@ function App() {
     }
     return 1;
   });
-
-  // Save to localStorage whenever barcodes or delay change
-  React.useEffect(() => {
-    localStorage.setItem('barcode-list', JSON.stringify({ barcodes, delay }));
-  }, [barcodes, delay]);
   const [input, setInput] = useState('');
   const [noteInput, setNoteInput] = useState('');
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -158,6 +138,24 @@ function App() {
     reader.readAsText(file);
   };
 
+  const nextBarcode = useCallback((idx: number) => {
+    setShowEmpty(true);
+    if (programmTimer.current) clearTimeout(programmTimer.current);
+    programmTimer.current = setTimeout(() => {
+      setShowEmpty(false);
+      setCurrentIdx(idx + 1);
+      const ms = Math.max(1, Math.min(delay, 30)) * 1000;
+      if (idx < barcodes.length - 1) {
+        programmTimer.current = setTimeout(() => {
+          nextBarcode(idx + 1);
+        }, ms);
+      } else {
+        // After last barcode, show empty content and wait for user to stop
+        setCurrentIdx(barcodes.length + 1); // out of bounds means empty
+      }
+    }, 500); // 0.5s empty screen before barcode
+  }, [barcodes.length, delay]);
+
   React.useEffect(() => {
     if (!programmMode) return;
     if (programmTimer.current) clearTimeout(programmTimer.current);
@@ -195,7 +193,7 @@ function App() {
       </Card>
       <Card style={{ minHeight: 200, padding: '1rem', marginBottom: '1rem' }}>
         {programmMode ? (
-          currentIdx === 0 ? (
+          showEmpty || currentIdx === 0 ? (
             <div style={{ textAlign: 'center', color: '#888', minHeight: 120 }}></div>
           ) : barcodes.length > 0 && currentIdx <= barcodes.length && currentIdx > 0 && currentIdx <= barcodes.length ? (
             currentIdx <= barcodes.length ? (
