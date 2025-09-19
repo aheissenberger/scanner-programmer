@@ -16,7 +16,7 @@ function App() {
 
   const [programmMode, setProgrammMode] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
-  // (already declared above)
+  const [paused, setPaused] = useState(false);
   const programmTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Ignore key events in programm mode
@@ -37,10 +37,7 @@ function App() {
     setProgrammMode(true);
     setCurrentIdx(0);
     if (programmTimer.current) clearTimeout(programmTimer.current);
-    // Show empty content first, then start barcodes
-    programmTimer.current = setTimeout(() => {
-      nextBarcode(0);
-    }, Math.max(1, Math.min(delay, 30)) * 1000);
+    setPaused(false);
   };
 
   // Stop programm mode
@@ -48,6 +45,7 @@ function App() {
     setProgrammMode(false);
     setCurrentIdx(0);
     if (programmTimer.current) clearTimeout(programmTimer.current);
+    setPaused(false);
   };
 
   // Show next barcode
@@ -56,7 +54,9 @@ function App() {
     const ms = Math.max(1, Math.min(delay, 30)) * 1000;
     if (idx < barcodes.length - 1) {
       programmTimer.current = setTimeout(() => {
-        nextBarcode(idx + 1);
+        if (!paused) {
+          nextBarcode(idx + 1);
+        }
       }, ms);
     } else {
       // After last barcode, show empty content and wait for user to stop
@@ -158,9 +158,24 @@ function App() {
     reader.readAsText(file);
   };
 
+  React.useEffect(() => {
+    if (!programmMode) return;
+    if (programmTimer.current) clearTimeout(programmTimer.current);
+    // Fix: always start with currentIdx = 1 after initial delay
+    if (!paused && barcodes.length > 0 && currentIdx >= 0 && currentIdx < barcodes.length) {
+      const ms = Math.max(1, Math.min(delay, 30)) * 1000;
+      programmTimer.current = setTimeout(() => {
+        nextBarcode(currentIdx);
+      }, ms);
+    }
+    return () => {
+      if (programmTimer.current) clearTimeout(programmTimer.current);
+    };
+  }, [programmMode, paused, currentIdx, barcodes.length, delay, nextBarcode]);
+
   return (
     <div style={{ maxWidth: 500, margin: '2rem auto', padding: '1rem' }}>
-      <h2>Barcode List Manager</h2>
+      <h2>Scanner Programcodes Manager</h2>
       <Card style={{ marginBottom: '1rem', padding: '1rem' }}>
         <Input
           placeholder="Enter barcode value"
@@ -270,6 +285,14 @@ function App() {
         >
           {programmMode ? 'Stop Programm Mode' : 'Start Programm Mode'}
         </Button>
+        {programmMode && (
+          <Button
+            variant={paused ? 'outline' : 'secondary'}
+            onClick={() => setPaused(p => !p)}
+          >
+            {paused ? 'Resume' : 'Pause'}
+          </Button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <label htmlFor="delay" style={{ fontSize: '0.95em' }}>Delay:</label>
           <Input
