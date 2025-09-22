@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Card } from "./components/ui/card";
-import { TrashIcon } from "@radix-ui/react-icons";
+import { TrashIcon, Pencil2Icon } from "@radix-ui/react-icons";
 
 type Barcode = {
   id: string;
@@ -63,6 +63,8 @@ function App() {
     }
     return [];
   });
+  // Track which barcode is in edit mode
+  const [editIdx, setEditIdx] = useState<number | null>(null);
   const [delay, setDelay] = useState(() => {
     const saved = localStorage.getItem('barcode-list');
     if (saved) {
@@ -275,36 +277,56 @@ function App() {
                   <div style={{ marginBottom: 4 }}>
                     <BarcodeComponent value={barcode.value} height={32} width={1.5} displayValue={false} />
                   </div>
-                  <Input
-                    value={barcode.value}
-                    style={{ marginBottom: 2 }}
-                    onChange={e => {
-                      const updated = [...barcodes];
-                      updated[idx] = { ...updated[idx], value: e.target.value };
-                      setBarcodes(updated);
-                    }}
-                    onBlur={e => {
-                      const updated = [...barcodes];
-                      updated[idx] = { ...updated[idx], value: e.target.value.trim() };
-                      setBarcodes(updated);
-                    }}
-                  />
-                  <Input
-                    value={barcode.note || ''}
-                    style={{ fontSize: '0.9em', color: '#888', marginTop: 2 }}
-                    placeholder="Note"
-                    onChange={e => {
-                      const updated = [...barcodes];
-                      updated[idx] = { ...updated[idx], note: e.target.value };
-                      setBarcodes(updated);
-                    }}
-                    onBlur={e => {
-                      const updated = [...barcodes];
-                      updated[idx] = { ...updated[idx], note: e.target.value.trim() };
-                      setBarcodes(updated);
-                    }}
-                  />
+                  {editIdx === idx ? (
+                    <>
+                      <Input
+                        value={barcode.value}
+                        style={{ marginBottom: 2 }}
+                        onChange={e => {
+                          const updated = [...barcodes];
+                          updated[idx] = { ...updated[idx], value: e.target.value };
+                          setBarcodes(updated);
+                        }}
+                        onBlur={e => {
+                          const updated = [...barcodes];
+                          updated[idx] = { ...updated[idx], value: e.target.value.trim() };
+                          setBarcodes(updated);
+                        }}
+                      />
+                      <Input
+                        value={barcode.note || ''}
+                        style={{ fontSize: '0.9em', color: '#888', marginTop: 2 }}
+                        placeholder="Note"
+                        onChange={e => {
+                          const updated = [...barcodes];
+                          updated[idx] = { ...updated[idx], note: e.target.value };
+                          setBarcodes(updated);
+                        }}
+                        onBlur={e => {
+                          const updated = [...barcodes];
+                          updated[idx] = { ...updated[idx], note: e.target.value.trim() };
+                          setBarcodes(updated);
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontWeight: 500 }}>{barcode.value}</div>
+                      {barcode.note && (
+                        <div style={{ fontSize: '0.9em', color: '#888', marginTop: 2 }}>{barcode.note}</div>
+                      )}
+                    </>
+                  )}
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={editIdx === idx ? "Preview barcode" : "Edit barcode"}
+                  onClick={() => setEditIdx(editIdx === idx ? null : idx)}
+                  style={{ marginRight: 4 }}
+                >
+                  <Pencil2Icon />
+                </Button>
                 <Button variant="ghost" size="icon" aria-label="Delete barcode" onClick={() => setBarcodes(barcodes.filter((_, i) => i !== idx))}>
                   <TrashIcon />
                 </Button>
