@@ -84,6 +84,10 @@ function App() {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Save barcodes and delay to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem('barcode-list', JSON.stringify({ barcodes, delay }));
+  }, [barcodes, delay]);
 
   // Add barcode
   const handleAdd = () => {
