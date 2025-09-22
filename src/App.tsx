@@ -33,6 +33,12 @@ function App() {
     };
   }, [programmMode]);
 
+  // Reset List
+  const resetList = () => {
+    setBarcodes([]);
+    setDelay(1);
+  }
+
   // Start programm mode
   const startProgrammMode = () => {
     setProgrammMode(true);
@@ -200,6 +206,9 @@ function App() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, alignItems: 'center' }}>
         <Button onClick={handleSave}>Save List</Button>
         <Button onClick={() => fileInputRef.current?.click()}>Load List</Button>
+        <Button onClick={resetList}>Reset List</Button>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4, alignItems: 'center' }}>
         <Button
           variant={programmMode ? 'destructive' : 'default'}
           onClick={programmMode ? stopProgrammMode : startProgrammMode}
