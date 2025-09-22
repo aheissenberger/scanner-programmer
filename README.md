@@ -5,7 +5,9 @@ A tool for programming scanner devices.
 ## Features
 
 * create a list of barecode to preset the device
+  ![Edit Mode](doc/edit.png)
 * present on barecode after each other with a predefined delay to program the scanner
+  ![Program Mode](doc/present.png)
 
 ## install
 
