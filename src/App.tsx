@@ -191,7 +191,46 @@ function App() {
         />
         <Button style={{ marginTop: 8 }} onClick={handleAdd}>Add Barcode</Button>
       </Card>
-      <Card style={{ minHeight: 200, padding: '1rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, alignItems: 'center' }}>
+        <Button onClick={handleSave}>Save List</Button>
+        <Button onClick={() => fileInputRef.current?.click()}>Load List</Button>
+        <Button
+          variant={programmMode ? 'destructive' : 'default'}
+          onClick={programmMode ? stopProgrammMode : startProgrammMode}
+        >
+          {programmMode ? 'Stop Program Mode' : 'Start Program Mode'}
+        </Button>
+        {programmMode && (
+          <Button
+            variant={paused ? 'outline' : 'secondary'}
+            onClick={() => setPaused(p => !p)}
+          >
+            {paused ? 'Resume' : 'Pause'}
+          </Button>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <label htmlFor="delay" style={{ fontSize: '0.95em' }}>Delay:</label>
+          <Input
+            id="delay"
+            type="number"
+            min={1}
+            max={30}
+            value={delay}
+            onChange={e => setDelay(Math.max(1, Math.min(30, Number(e.target.value))))}
+            style={{ width: 60 }}
+            disabled={programmMode}
+          />
+          <span style={{ fontSize: '0.95em' }}>sec</span>
+        </div>
+        <input
+          type="file"
+          accept="application/json"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleLoad}
+        />
+      </div>
+      <Card style={{ minHeight: 200, padding: '1rem', marginTop: '1rem' }}>
         {programmMode ? (
           showEmpty || currentIdx === 0 ? (
             <div style={{ textAlign: 'center', color: '#888', minHeight: 120 }}></div>
@@ -274,45 +313,6 @@ function App() {
           </ul>
         )}
       </Card>
-      <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center' }}>
-        <Button onClick={handleSave}>Save List</Button>
-        <Button onClick={() => fileInputRef.current?.click()}>Load List</Button>
-        <Button
-          variant={programmMode ? 'destructive' : 'default'}
-          onClick={programmMode ? stopProgrammMode : startProgrammMode}
-        >
-          {programmMode ? 'Stop Programm Mode' : 'Start Programm Mode'}
-        </Button>
-        {programmMode && (
-          <Button
-            variant={paused ? 'outline' : 'secondary'}
-            onClick={() => setPaused(p => !p)}
-          >
-            {paused ? 'Resume' : 'Pause'}
-          </Button>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <label htmlFor="delay" style={{ fontSize: '0.95em' }}>Delay:</label>
-          <Input
-            id="delay"
-            type="number"
-            min={1}
-            max={30}
-            value={delay}
-            onChange={e => setDelay(Math.max(1, Math.min(30, Number(e.target.value))))}
-            style={{ width: 60 }}
-            disabled={programmMode}
-          />
-          <span style={{ fontSize: '0.95em' }}>sec</span>
-        </div>
-        <input
-          type="file"
-          accept="application/json"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleLoad}
-        />
-      </div>
     </div>
   );
 }
