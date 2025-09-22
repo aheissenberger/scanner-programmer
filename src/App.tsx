@@ -186,7 +186,7 @@ function App() {
   return (
     <div style={{ maxWidth: 500, margin: '2rem auto', padding: '1rem' }}>
       <h2>Scanner Programcodes Manager</h2>
-      <Card style={{ marginBottom: '1rem', padding: '1rem' }}>
+      <Card style={{ marginBottom: '2rem', padding: '1rem', gap:8 }}>
         <Input
           placeholder="Enter barcode value"
           value={input}
@@ -199,9 +199,9 @@ function App() {
           placeholder="Add a note (optional)"
           value={noteInput}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
-          style={{ marginTop: 8 }}
+          
         />
-        <Button style={{ marginTop: 8 }} onClick={handleAdd}>Add Barcode</Button>
+        <Button style={{ marginTop: 16 }} onClick={handleAdd}>Add Barcode</Button>
       </Card>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, alignItems: 'center' }}>
         <Button onClick={handleSave}>Save List</Button>
