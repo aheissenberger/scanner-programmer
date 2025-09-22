@@ -1,0 +1,15 @@
+{
+    "barcodes": [
+        {
+            "id": "1758286993413",
+            "value": "303FFF0",
+            "note": "factory Default"
+        },
+        {
+            "id": "1758287009231",
+            "value": "6060109",
+            "note": "German Keyboard"
+        }
+    ],
+    "delay": 5
+}
