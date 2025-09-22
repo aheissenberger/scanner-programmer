@@ -4,7 +4,7 @@ A tool for programming scanner devices.
 
 ## Features
 
-* create a list of barecode to preset the device
+* create a list of barecodes to program the device
   ![Edit Mode](doc/edit.png)
 * present on barecode after each other with a predefined delay to program the scanner
   ![Program Mode](doc/present.png)
@@ -19,7 +19,7 @@ A tool for programming scanner devices.
 
 ## Contributing
 
-Contributions are welcome! If you want to add support for more countries, improve the code, or fix bugs, please follow these steps:
+Contributions are welcome! If you want to improve the code, or fix bugs, please follow these steps:
 
 1. Fork the repository and create a new branch for your feature or fix.
 2. Make your changes and add or update tests as needed.
