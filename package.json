@@ -27,6 +27,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.545.0",
     "qrcode.react": "^4.2.0",
+    "quagga": "^0.12.1",
     "react": "^19.2.0",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.2.0",

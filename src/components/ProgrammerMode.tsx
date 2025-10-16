@@ -1,3 +1,5 @@
+// @ts-ignore
+import Quagga from 'quagga';
 import BarcodeComponent from 'react-barcode';
 
 import React, { useState, useRef, useCallback } from 'react';
@@ -18,6 +20,54 @@ type Barcode = {
 };
 
 function ProgrammerMode() {
+  // Camera barcode scan state
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLDivElement>(null);
+
+  // Start camera and scan barcode
+  const handleStartCameraScan = () => {
+    setCameraError(null);
+    setCameraActive(true);
+    setTimeout(() => {
+      if (!videoRef.current) return;
+      Quagga.init({
+        inputStream: {
+          name: 'Live',
+          type: 'LiveStream',
+          target: videoRef.current,
+          constraints: {
+            facingMode: 'environment',
+          },
+        },
+        decoder: {
+          readers: ['code_128_reader'],
+        },
+        locate: true,
+      }, (err: any) => {
+        if (err) {
+          setCameraError('Camera initialization failed: ' + err);
+          setCameraActive(false);
+          return;
+        }
+        Quagga.start();
+      });
+      Quagga.onDetected((data: any) => {
+        if (data && data.codeResult && data.codeResult.code) {
+          const rawData = data.codeResult.decodedCodes.map(c=>c.code)
+          setInput(decodeCode128Values(Uint8Array.from(rawData)));
+          setCameraActive(false);
+          Quagga.stop();
+        }
+      });
+    }, 100);
+  };
+
+  // Stop camera scan
+  const handleStopCameraScan = () => {
+    setCameraActive(false);
+    Quagga.stop();
+  };
 
   const [programmMode, setProgrammMode] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -317,7 +367,21 @@ function ProgrammerMode() {
           value={noteInput}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
         />
-        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+  <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <Button
+            variant="outline"
+            onClick={handleStartCameraScan}
+            aria-label="Scan barcode from camera"
+          >
+            Scan Barcode (Camera)
+          </Button>
+          {cameraActive && (
+            <div style={{ marginTop: 12, marginBottom: 8 }}>
+              <div ref={videoRef} style={{ width: 320, height: 240, background: '#222', borderRadius: 8, overflow: 'hidden' }} />
+              <Button variant="destructive" style={{ marginTop: 8 }} onClick={handleStopCameraScan}>Stop Camera</Button>
+              {cameraError && <div style={{ color: 'red', marginTop: 4 }}>{cameraError}</div>}
+            </div>
+          )}
           <Button onClick={handleAdd}>Add Barcode</Button>
 
           <Button
