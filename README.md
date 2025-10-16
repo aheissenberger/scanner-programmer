@@ -50,7 +50,7 @@ Contributions are welcome! If you want to improve the code, or fix bugs, please 
 For major changes or questions, please open an issue first to discuss what you would like to change.
 
 To add a country start with copying an existing implementation in `./src/download`.
-Read [Copilot Instructions](./github/copilot-instructions.md) for an overview of the repository.
+Read [Copilot Instructions](.github/copilot-instructions.md) for an overview of the repository.
 
 Thank you for helping make this project better!
 

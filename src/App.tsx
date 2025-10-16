@@ -18,7 +18,7 @@ function App() {
           <button
             aria-label="Open menu"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, borderRadius: 6 }}
-            onClick={e => {
+            onClick={_e => {
               const menu = document.getElementById('main-menu');
               if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
             }}
