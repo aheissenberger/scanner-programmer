@@ -10,13 +10,15 @@
 ### Programmer Mode
 1. The application must allow users to create and manage a list of barcodes to program a barcode scanner.
 2. Users should be able to present the code one by one to a barcode scanner.
-3. The barcode can be scanned or entered by value.
+3. The barcode can entered by value.
 4. The user can optionally add a note to each barcode.
 5. The user can change the order of the list by drag and drop.
 6. The user can save the list including the delay.
 7. The user can load a list including the delay.
 8. The user can change the default delay for presenting the barcode from 1 second to values between 1-30.
 9. The user can activate the programm mode, where only one value presented as barcode after the other is shown with a delay of 2 seconds. Ignore any keys while presenting.
+10. The barcode value can be uploaded as image where the image is scanned by a barcode library and the text is stored in the value field
+11. The decoded barcode value from an image needs to contain the following CODE128 specific controll codes: {FNC1},{FNC2},{FNC3},{FNC4}
 
 ### QR Test Mode
 1. The application must allow the user to enter arbitrary text and generate a QR code based on that text.

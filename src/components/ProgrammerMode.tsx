@@ -1,11 +1,14 @@
 import BarcodeComponent from 'react-barcode';
 
 import React, { useState, useRef, useCallback } from 'react';
+// @ts-ignore
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TrashIcon, Pencil2Icon } from "@radix-ui/react-icons";
 import { replaceSpecialChars } from '@/lib/utils';
+import { decodeCode128Values } from '@/lib/barcode-decoder';
 
 type Barcode = {
   id: string;
@@ -91,6 +94,38 @@ function ProgrammerMode() {
   const [noteInput, setNoteInput] = useState('');
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  // Barcode image upload and scan
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const img = new window.Image();
+      img.onload = async () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          const codeReader = new BrowserMultiFormatReader();
+          try {
+            const result = await codeReader.decodeFromImageElement(img);
+            setInput(decodeCode128Values(result.getRawBytes()));
+          } catch (err) {
+            alert('No barcode found in image.');
+          }
+        } catch (err) {
+          alert('Failed to process image.');
+        }
+      };
+      img.onerror = () => alert('Failed to load image.');
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Save barcodes and delay to localStorage whenever they change
   React.useEffect(() => {
@@ -189,23 +224,62 @@ function ProgrammerMode() {
   return (
     <>
       <h2>Scanner Programcodes Manager</h2>
-      <Card style={{ marginBottom: '2rem', padding: '1rem', gap:8 }}>
-        <Input
-          placeholder="Enter barcode value"
-          value={input}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'Enter') handleAdd();
-          }}
-        />
-        <Input
-          placeholder="Add a note (optional)"
-          value={noteInput}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
-          
-        />
-        <Button style={{ marginTop: 16 }} onClick={handleAdd}>Add Barcode</Button>
-      </Card>
+  <Card style={{ marginBottom: '2rem', padding: '1rem', gap: 8 }}>
+    <Input
+      placeholder="Enter barcode value"
+      value={input}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') handleAdd();
+      }}
+    />
+    <Input
+      placeholder="Add a note (optional)"
+      value={noteInput}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
+    />
+    <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <Button onClick={handleAdd}>Add Barcode</Button>
+
+      <Button
+        variant="outline"
+        onClick={() => {
+          // ensure file picker (no camera) by removing capture attribute if present
+          if (imageInputRef.current) {
+            imageInputRef.current.removeAttribute('capture');
+            imageInputRef.current.click();
+          }
+        }}
+        aria-label="Upload barcode image"
+      >
+        Upload Barcode Image
+      </Button>
+
+      <Button
+        variant="secondary"
+        onClick={() => {
+          // request camera capture (mobile browsers will open camera)
+          if (imageInputRef.current) {
+            imageInputRef.current.setAttribute('capture', 'environment');
+            imageInputRef.current.click();
+            // cleanup attribute shortly after click to avoid affecting next upload
+            setTimeout(() => imageInputRef.current?.removeAttribute('capture'), 500);
+          }
+        }}
+        aria-label="Take photo with camera"
+      >
+        Take Photo
+      </Button>
+    </div>
+
+    <input
+      type="file"
+      accept="image/*"
+      ref={imageInputRef}
+      style={{ display: 'none' }}
+      onChange={handleImageUpload}
+    />
+  </Card>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, alignItems: 'center' }}>
         <Button onClick={handleSave}>Save List</Button>
         <Button onClick={() => fileInputRef.current?.click()}>Load List</Button>
