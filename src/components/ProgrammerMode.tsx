@@ -373,7 +373,7 @@ function ProgrammerMode() {
             onClick={handleStartCameraScan}
             aria-label="Scan barcode from camera"
             >
-            <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 4 }}>
               <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -399,21 +399,38 @@ function ProgrammerMode() {
               {cameraError && <div style={{ color: 'red', marginTop: 4 }}>{cameraError}</div>}
             </div>
           )}
-          <Button onClick={handleAdd}>Add Barcode</Button>
 
-          <Button
+            <Button
             variant="outline"
             onClick={() => {
               // ensure file picker (no camera) by removing capture attribute if present
               if (imageInputRef.current) {
-                imageInputRef.current.removeAttribute('capture');
-                imageInputRef.current.click();
+              imageInputRef.current.removeAttribute('capture');
+              imageInputRef.current.click();
               }
             }}
             aria-label="Upload barcode image"
-          >
-            Upload Barcode Image
-          </Button>
+            >
+            <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 4 }}>
+              <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 5 17 10" />
+              <line x1="12" y1="5" x2="12" y2="19" />
+              </svg>
+            </span>
+            Barcode Image
+            </Button>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <Button
@@ -421,7 +438,26 @@ function ProgrammerMode() {
               onClick={handlePasteFromClipboard}
               aria-label="Paste barcode image from clipboard"
             >
-              Paste Barcode Image
+              <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 4 }}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                <path d="M12 11v6" />
+                <path d="M9 14l3 3 3-3" />
+              </svg>
+              </span>
+              Paste Image
             </Button>
             {clipboardImageUrl && (
               <div style={{ marginTop: 8, maxWidth: 180 }}>
@@ -431,6 +467,8 @@ function ProgrammerMode() {
             )}
           </div>
         </div>
+
+        <Button onClick={handleAdd}>Add Barcode</Button>
 
         <input
           type="file"
