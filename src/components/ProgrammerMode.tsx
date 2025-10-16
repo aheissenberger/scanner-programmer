@@ -330,7 +330,7 @@ function ProgrammerMode() {
             currentIdx <= barcodes.length ? (
               <div style={{ textAlign: 'center', fontSize: '1.5em', minHeight: 120 }}>
                 <div style={{ marginBottom: 16 }}>
-                  <BarcodeComponent value={replaceSpecialChars(barcodes[currentIdx - 1].value)} format="CODE128" height={60} width={2} displayValue={false} />
+                  <BarcodeComponent value={replaceSpecialChars(barcodes[currentIdx - 1].value)} format="CODE128" height={80} displayValue={false} />
                 </div>
                 <div>{barcodes[currentIdx - 1].value}</div>
                 {barcodes[currentIdx - 1].note && (
