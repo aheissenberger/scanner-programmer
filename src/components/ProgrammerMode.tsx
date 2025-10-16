@@ -368,13 +368,30 @@ function ProgrammerMode() {
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
         />
   <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Button
+            <Button
             variant="outline"
             onClick={handleStartCameraScan}
             aria-label="Scan barcode from camera"
-          >
-            Scan Barcode (Camera)
-          </Button>
+            >
+            <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 8 }}>
+              <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              >
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="3" />
+              </svg>
+            </span>
+            Scan Barcode
+            </Button>
           {cameraActive && (
             <div style={{ marginTop: 12, marginBottom: 8 }}>
               <div ref={videoRef} style={{ width: 320, height: 240, background: '#222', borderRadius: 8, overflow: 'hidden' }} />
@@ -396,22 +413,6 @@ function ProgrammerMode() {
             aria-label="Upload barcode image"
           >
             Upload Barcode Image
-          </Button>
-
-          <Button
-            variant="secondary"
-            onClick={() => {
-              // request camera capture (mobile browsers will open camera)
-              if (imageInputRef.current) {
-                imageInputRef.current.setAttribute('capture', 'environment');
-                imageInputRef.current.click();
-                // cleanup attribute shortly after click to avoid affecting next upload
-                setTimeout(() => imageInputRef.current?.removeAttribute('capture'), 500);
-              }
-            }}
-            aria-label="Take photo with camera"
-          >
-            Take Photo
           </Button>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
