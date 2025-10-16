@@ -1,6 +1,6 @@
 # Scanner Programmer
 
-A tool for programming scanner devices.
+A tool for programming scanner devices. Use the "Scan Barcode" Button on a mobile phone to quickly scan the required barcodes from the manual.
 
 
 ## Features
@@ -37,6 +37,11 @@ A tool for programming scanner devices.
 ## usage
 
 `pnpm dev`
+
+## Q&A
+
+* most scanner programming command include a non visible code like `{FNC1}`, `{FNC2}`, `{FNC3}`, `{FNC4}`
+* MacOS: copy of a barcode from a pdf opened in preview will fail as the fallback png in the clipboard does not provide the required resolution
 
 ## Contributing
 
