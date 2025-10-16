@@ -2,14 +2,14 @@ import BarcodeComponent from 'react-barcode';
 
 import React, { useState, useRef, useCallback } from 'react';
 // @ts-ignore
-import { BrowserMultiFormatReader, NotFoundException, Code128Reader, BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TrashIcon, Pencil2Icon } from "@radix-ui/react-icons";
 import { replaceSpecialChars } from '@/lib/utils';
 import { decodeCode128Values } from '@/lib/barcode-decoder';
-import { binaryBitmapFromCanvas, prepForZXing } from '@/lib/barcode-optimize';
+import { BarcodeFormat, DecodeHintType } from '@zxing/library';
+import { BrowserMultiFormatReader  } from '@zxing/browser';
 
 type Barcode = {
   id: string;
@@ -103,19 +103,39 @@ function ProgrammerMode() {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const img = new window.Image();
+      let imgUrl;
       img.onload = async () => {
         try {
+          let width = img.width;
+          let height = img.height;
+          // Resize if width or height > 600px
+          if (width > 600 || height > 600) {
+            const scale = Math.min(600 / width, 600 / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
           const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
+          canvas.width = width;
+          canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (!ctx) return;
-          ctx.drawImage(img, 0, 0, img.width, img.height);
-          const codeReader = new BrowserMultiFormatReader();
+          ctx.drawImage(img, 0, 0, width, height);
+          imgUrl = canvas.toDataURL();
+          const hints = new Map();
+          hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128]);
+          hints.set(DecodeHintType.TRY_HARDER, true);
+          const codeReader = new BrowserMultiFormatReader(hints);
           try {
-            const result = await codeReader.decodeFromImageElement(img);
-            setInput(decodeCode128Values(result.getRawBytes()));
+            // Use decodeFromImageElement only if not resized, otherwise decode from canvas
+            if (width !== img.width || height !== img.height) {
+              const result = await codeReader.decodeFromCanvas(canvas);
+              setInput(decodeCode128Values(result.getRawBytes()));
+            } else {
+              const result = await codeReader.decodeFromImageElement(img);
+              setInput(decodeCode128Values(result.getRawBytes()));
+            }
           } catch (err) {
+            setClipboardImageUrl(imgUrl);
             alert('No barcode found in image.');
           }
         } catch (err) {
@@ -149,17 +169,17 @@ function ProgrammerMode() {
                 if (!ctx) return;
                 ctx.drawImage(img, 0, 0, img.width, img.height);
                 // optimize low res images for better scanning
-/*                 if (img.width < 300) {
-                  canvas = prepForZXing(canvas);
-                  imgUrl = canvas.toDataURL(); // update preview to optimized version
-                } */
+                /*                 if (img.width < 300) {
+                                  canvas = prepForZXing(canvas);
+                                  imgUrl = canvas.toDataURL(); // update preview to optimized version
+                                } */
                 const hints = new Map();
                 hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128]);
                 hints.set(DecodeHintType.TRY_HARDER, true);
                 const codeReader = new BrowserMultiFormatReader(hints);
                 try {
                   //const result = await codeReader.decodeFromImageElement(img);
-                  const result = await ((img.width < 300) ? codeReader.decodeBitmap(binaryBitmapFromCanvas(canvas)) : codeReader.decodeFromImageElement(img));
+                  const result = await ((img.width < 300) ? codeReader.decodeFromCanvas(canvas) : codeReader.decodeFromImageElement(img));
                   setInput(decodeCode128Values(result.getRawBytes()));
                   setClipboardImageUrl(null); // clear preview if barcode found
                 } catch (err) {
