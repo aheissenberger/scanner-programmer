@@ -54,6 +54,7 @@ function ProgrammerMode() {
     setCurrentIdx(0);
     if (programmTimer.current) clearTimeout(programmTimer.current);
     setPaused(false);
+    setShowEmpty(false);
   };
 
   const [barcodes, setBarcodes] = useState<Barcode[]>(() => {
@@ -156,15 +157,16 @@ function ProgrammerMode() {
     if (programmTimer.current) clearTimeout(programmTimer.current);
     programmTimer.current = setTimeout(() => {
       setShowEmpty(false);
-      setCurrentIdx(idx + 1);
-      const ms = Math.max(1, Math.min(delay, 30)) * 1000;
+      // Only advance if not at last barcode
       if (idx < barcodes.length - 1) {
+        setCurrentIdx(idx + 1);
+        const ms = Math.max(1, Math.min(delay, 30)) * 1000;
         programmTimer.current = setTimeout(() => {
           nextBarcode(idx + 1);
         }, ms);
       } else {
-        // After last barcode, show empty content and wait for user to stop
-        setCurrentIdx(barcodes.length + 1); // out of bounds means empty
+        // Stay on last barcode, do not advance out of bounds
+        setCurrentIdx(barcodes.length); // show last barcode
       }
     }, 500); // 0.5s empty screen before barcode
   }, [barcodes.length, delay]);
