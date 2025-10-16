@@ -1,7 +1,7 @@
 
 import ProgrammerMode from './components/ProgrammerMode';
 import { QRTestMode } from './components/QRTestMode';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 type Mode = 'programmer' | 'qrtest';
 
