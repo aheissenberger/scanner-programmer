@@ -2,13 +2,14 @@ import BarcodeComponent from 'react-barcode';
 
 import React, { useState, useRef, useCallback } from 'react';
 // @ts-ignore
-import { BrowserMultiFormatReader, NotFoundException,Code128Reader } from '@zxing/library';
+import { BrowserMultiFormatReader, NotFoundException, Code128Reader, BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TrashIcon, Pencil2Icon } from "@radix-ui/react-icons";
 import { replaceSpecialChars } from '@/lib/utils';
 import { decodeCode128Values } from '@/lib/barcode-decoder';
+import { binaryBitmapFromCanvas, prepForZXing } from '@/lib/barcode-optimize';
 
 type Barcode = {
   id: string;
@@ -127,45 +128,60 @@ function ProgrammerMode() {
     reader.readAsDataURL(file);
   };
 
+  // Preview state for clipboard image
+  const [clipboardImageUrl, setClipboardImageUrl] = useState<string | null>(null);
   // Barcode image paste from clipboard
   const handlePasteFromClipboard = async () => {
-    debugger
     try {
       const clipboardItems = await (navigator.clipboard as any).read();
       for (const item of clipboardItems) {
         for (const type of item.types) {
           if (type.startsWith('image/')) {
             const blob = await item.getType(type);
+            let imgUrl = URL.createObjectURL(blob);
             const img = new window.Image();
             img.onload = async () => {
               try {
-                const canvas = document.createElement('canvas');
+                let canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
                 ctx.drawImage(img, 0, 0, img.width, img.height);
-                const codeReader = new BrowserMultiFormatReader();
+                // optimize low res images for better scanning
+/*                 if (img.width < 300) {
+                  canvas = prepForZXing(canvas);
+                  imgUrl = canvas.toDataURL(); // update preview to optimized version
+                } */
+                const hints = new Map();
+                hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128]);
+                hints.set(DecodeHintType.TRY_HARDER, true);
+                const codeReader = new BrowserMultiFormatReader(hints);
                 try {
-                  const result = await codeReader.decodeFromImageElement(img);
+                  //const result = await codeReader.decodeFromImageElement(img);
+                  const result = await ((img.width < 300) ? codeReader.decodeBitmap(binaryBitmapFromCanvas(canvas)) : codeReader.decodeFromImageElement(img));
                   setInput(decodeCode128Values(result.getRawBytes()));
+                  setClipboardImageUrl(null); // clear preview if barcode found
                 } catch (err) {
-                  console.log(err)
-                  alert('No barcode found in image.');
+                  setClipboardImageUrl(imgUrl); // show preview if no barcode found
+                  alert('No barcode found in image. Image Size: ' + img.width + 'x' + img.height);
                 }
               } catch (err) {
+                setClipboardImageUrl(imgUrl); // show preview if failed to process
                 alert('Failed to process image.');
               }
             };
-            img.onerror = (err) => { debugger; console.log(err);alert('Failed to load image.'); };
-            img.src = URL.createObjectURL(blob);
+            img.onerror = () => {
+              setClipboardImageUrl(imgUrl);
+              alert('Failed to load image.');
+            };
+            img.src = imgUrl;
             return;
           }
         }
       }
       alert('No image found in clipboard.');
     } catch (err) {
-      console.log(err);
       alert('Failed to read clipboard. Your browser may not support image clipboard access.');
     }
   };
@@ -267,70 +283,78 @@ function ProgrammerMode() {
   return (
     <>
       <h2>Scanner Programcodes Manager</h2>
-  <Card style={{ marginBottom: '2rem', padding: '1rem', gap: 8 }}>
-    <Input
-      placeholder="Enter barcode value"
-      value={input}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') handleAdd();
-      }}
-    />
-    <Input
-      placeholder="Add a note (optional)"
-      value={noteInput}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
-    />
-    <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      <Button onClick={handleAdd}>Add Barcode</Button>
+      <Card style={{ marginBottom: '2rem', padding: '1rem', gap: 8 }}>
+        <Input
+          placeholder="Enter barcode value"
+          value={input}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter') handleAdd();
+          }}
+        />
+        <Input
+          placeholder="Add a note (optional)"
+          value={noteInput}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteInput(e.target.value)}
+        />
+        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <Button onClick={handleAdd}>Add Barcode</Button>
 
-      <Button
-        variant="outline"
-        onClick={() => {
-          // ensure file picker (no camera) by removing capture attribute if present
-          if (imageInputRef.current) {
-            imageInputRef.current.removeAttribute('capture');
-            imageInputRef.current.click();
-          }
-        }}
-        aria-label="Upload barcode image"
-      >
-        Upload Barcode Image
-      </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              // ensure file picker (no camera) by removing capture attribute if present
+              if (imageInputRef.current) {
+                imageInputRef.current.removeAttribute('capture');
+                imageInputRef.current.click();
+              }
+            }}
+            aria-label="Upload barcode image"
+          >
+            Upload Barcode Image
+          </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() => {
-          // request camera capture (mobile browsers will open camera)
-          if (imageInputRef.current) {
-            imageInputRef.current.setAttribute('capture', 'environment');
-            imageInputRef.current.click();
-            // cleanup attribute shortly after click to avoid affecting next upload
-            setTimeout(() => imageInputRef.current?.removeAttribute('capture'), 500);
-          }
-        }}
-        aria-label="Take photo with camera"
-      >
-        Take Photo
-      </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              // request camera capture (mobile browsers will open camera)
+              if (imageInputRef.current) {
+                imageInputRef.current.setAttribute('capture', 'environment');
+                imageInputRef.current.click();
+                // cleanup attribute shortly after click to avoid affecting next upload
+                setTimeout(() => imageInputRef.current?.removeAttribute('capture'), 500);
+              }
+            }}
+            aria-label="Take photo with camera"
+          >
+            Take Photo
+          </Button>
 
-      <Button
-        variant="outline"
-        onClick={handlePasteFromClipboard}
-        aria-label="Paste barcode image from clipboard"
-      >
-        Paste Barcode Image
-      </Button>
-    </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <Button
+              variant="outline"
+              onClick={handlePasteFromClipboard}
+              aria-label="Paste barcode image from clipboard"
+            >
+              Paste Barcode Image
+            </Button>
+            {clipboardImageUrl && (
+              <div style={{ marginTop: 8, maxWidth: 180 }}>
+                <span style={{ fontSize: '0.9em', color: '#888' }}>Clipboard Image Preview:</span>
+                <img src={clipboardImageUrl} alt="Clipboard preview" style={{ width: '100%', borderRadius: 4, border: '1px solid #ccc', marginTop: 4 }} />
+              </div>
+            )}
+          </div>
+        </div>
 
-    <input
-      type="file"
-      accept="image/*"
-      ref={imageInputRef}
-      style={{ display: 'none' }}
-      onChange={handleImageUpload}
-    />
-  </Card>
+        <input
+          type="file"
+          accept="image/*"
+          ref={imageInputRef}
+          style={{ display: 'none' }}
+          onChange={handleImageUpload}
+        />
+      </Card>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, alignItems: 'center' }}>
         <Button onClick={handleSave}>Save List</Button>
         <Button onClick={() => fileInputRef.current?.click()}>Load List</Button>
