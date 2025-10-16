@@ -2,7 +2,7 @@ import BarcodeComponent from 'react-barcode';
 
 import React, { useState, useRef, useCallback } from 'react';
 // @ts-ignore
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
+import { BrowserMultiFormatReader, NotFoundException,Code128Reader } from '@zxing/library';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -125,6 +125,49 @@ function ProgrammerMode() {
       img.src = ev.target?.result as string;
     };
     reader.readAsDataURL(file);
+  };
+
+  // Barcode image paste from clipboard
+  const handlePasteFromClipboard = async () => {
+    debugger
+    try {
+      const clipboardItems = await (navigator.clipboard as any).read();
+      for (const item of clipboardItems) {
+        for (const type of item.types) {
+          if (type.startsWith('image/')) {
+            const blob = await item.getType(type);
+            const img = new window.Image();
+            img.onload = async () => {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+                const codeReader = new BrowserMultiFormatReader();
+                try {
+                  const result = await codeReader.decodeFromImageElement(img);
+                  setInput(decodeCode128Values(result.getRawBytes()));
+                } catch (err) {
+                  console.log(err)
+                  alert('No barcode found in image.');
+                }
+              } catch (err) {
+                alert('Failed to process image.');
+              }
+            };
+            img.onerror = (err) => { debugger; console.log(err);alert('Failed to load image.'); };
+            img.src = URL.createObjectURL(blob);
+            return;
+          }
+        }
+      }
+      alert('No image found in clipboard.');
+    } catch (err) {
+      console.log(err);
+      alert('Failed to read clipboard. Your browser may not support image clipboard access.');
+    }
   };
 
   // Save barcodes and delay to localStorage whenever they change
@@ -269,6 +312,14 @@ function ProgrammerMode() {
         aria-label="Take photo with camera"
       >
         Take Photo
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={handlePasteFromClipboard}
+        aria-label="Paste barcode image from clipboard"
+      >
+        Paste Barcode Image
       </Button>
     </div>
 

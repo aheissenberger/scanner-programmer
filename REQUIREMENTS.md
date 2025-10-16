@@ -19,6 +19,7 @@
 9. The user can activate the programm mode, where only one value presented as barcode after the other is shown with a delay of 2 seconds. Ignore any keys while presenting.
 10. The barcode value can be uploaded as image where the image is scanned by a barcode library and the text is stored in the value field
 11. The decoded barcode value from an image needs to contain the following CODE128 specific controll codes: {FNC1},{FNC2},{FNC3},{FNC4}
+12. The barcode image to decode can be taken from the clipboard as image
 
 ### QR Test Mode
 1. The application must allow the user to enter arbitrary text and generate a QR code based on that text.
