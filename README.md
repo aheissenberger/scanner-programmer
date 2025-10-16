@@ -2,12 +2,33 @@
 
 A tool for programming scanner devices.
 
+
 ## Features
 
-* create a list of barecodes to program the device
-  ![Edit Mode](doc/edit.png)
-* present on barecode after each other with a predefined delay to program the scanner
-  ![Program Mode](doc/present.png)
+### Programmer Mode
+
+- Create and manage a list of barcodes to program a scanner device
+- Present barcodes one by one with a configurable delay (1–30 seconds)
+- Add optional notes to each barcode
+- Drag and drop to reorder barcodes
+- Save and load barcode lists (including delay) as JSON
+- Program mode: disables keyboard input and cycles through barcodes automatically
+
+### QR Test Mode
+
+- Enter arbitrary text to generate a QR code instantly
+- Switch between input and view mode using icon buttons
+- When viewing the QR code, all key presses are logged below the code (for scanner output testing)
+- Special keys (e.g., ESC, LF) are shown as `<Esc=27>`, `<LF=10>`, etc.
+- The Shift key is ignored in the log
+- Clear the key log with a trash icon button
+
+### General
+
+- Switch between Programmer Mode and QR Test Mode using a hamburger menu in the navbar
+
+![Edit Mode](doc/edit.png)
+![Program Mode](doc/present.png)
 
 ## install
 
@@ -32,10 +53,6 @@ To add a country start with copying an existing implementation in `./src/downloa
 Read [Copilot Instructions](./github/copilot-instructions.md) for an overview of the repository.
 
 Thank you for helping make this project better!
-
-## TODO
-
-[ ] add key visulizer to test the configuration
 
 
 ## License
