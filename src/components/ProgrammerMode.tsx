@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TrashIcon, Pencil2Icon } from "@radix-ui/react-icons";
+import { replaceSpecialChars } from '@/lib/utils';
 
 type Barcode = {
   id: string;
@@ -253,7 +254,7 @@ function ProgrammerMode() {
             currentIdx <= barcodes.length ? (
               <div style={{ textAlign: 'center', fontSize: '1.5em', minHeight: 120 }}>
                 <div style={{ marginBottom: 16 }}>
-                  <BarcodeComponent value={barcodes[currentIdx - 1].value} height={60} width={2} displayValue={false} />
+                  <BarcodeComponent value={replaceSpecialChars(barcodes[currentIdx - 1].value)} format="CODE128" height={60} width={2} displayValue={false} />
                 </div>
                 <div>{barcodes[currentIdx - 1].value}</div>
                 {barcodes[currentIdx - 1].note && (
@@ -288,7 +289,7 @@ function ProgrammerMode() {
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ marginBottom: 4 }}>
-                    <BarcodeComponent value={barcode.value} height={32} width={1.5} displayValue={false} />
+                    <BarcodeComponent value={replaceSpecialChars(barcode.value)} format="CODE128" height={32} width={1.5} displayValue={false} />
                   </div>
                   {editIdx === idx ? (
                     <>
