@@ -1,11 +1,11 @@
-export function decodeCode128Values(values: Uint8Array, { emitFNC4OnRedundantSwitch = true } = {}) {
+export function decodeCode128Values(values: Uint8Array, { emitFNC4OnRedundantSwitch = true }: { emitFNC4OnRedundantSwitch?: boolean } = {}): string {
   if (!values || values.length === 0) return '';
 
   // 1) Normalize: strip interleaved position markers like [105,1,60,2, ... ,106]
   // Heuristic: after START (103/104/105) if we see small increasing integers alternating,
   // treat odd items as "position counters" and drop them.
   const START_A = 103, START_B = 104, START_C = 105, STOP = 106;
-  let seq = values.slice();
+  let seq: Uint8Array = values.slice();
 
   const isStart = seq[0] === START_A || seq[0] === START_B || seq[0] === START_C;
   if (isStart && seq.length >= 4) {
@@ -14,7 +14,8 @@ export function decodeCode128Values(values: Uint8Array, { emitFNC4OnRedundantSwi
     for (let i = 1; i < seq.length - 1; i += 2) {
       const maybePos = seq[i];
       if (!(Number.isInteger(maybePos) && maybePos >= 0 && maybePos <= 64)) {
-        looksInterleaved = false; break;
+        looksInterleaved = false; 
+        break;
       }
     }
     if (looksInterleaved) {
@@ -37,11 +38,10 @@ export function decodeCode128Values(values: Uint8Array, { emitFNC4OnRedundantSwi
   // In Code 128, FNC4 shares code values with the "CODE A/B" functions and is rarely used.
   // Practically: if 100 appears *while already in Code B*, many generators use it as FNC4.
   // We'll expose {FNC4} on redundant "CODE B" (or redundant "CODE A") if enabled.
-  const POSSIBLE_FNC4 = 100;
 
   // 3) Determine starting code set
   let idx = 0;
-  let set;
+  let set: 'A' | 'B' | 'C';
   const start = seq[idx++];
   if (start === START_A) set = 'A';
   else if (start === START_B) set = 'B';
@@ -56,17 +56,19 @@ export function decodeCode128Values(values: Uint8Array, { emitFNC4OnRedundantSwi
   const lastDataIdx = (stopPos !== -1 && end - 2 >= 0) ? end - 2 : end - 1;
 
   let out = '';
-  // Helper to append one symbol (A/B mapping)
-function appendSetA(codeVal: number): void {
+
+  // Helper functions - declared before use
+  const appendSetA = (codeVal: number): void => {
     // Set A maps 0–95 → ASCII 0–95
     const ch: number = codeVal;
     out += ch >= 32 ? String.fromCharCode(ch) : `\\x${ch.toString(16).padStart(2, '0')}`;
-}
-  function appendSetB(codeVal:number) {
+  };
+
+  const appendSetB = (codeVal: number): void => {
     // Set B maps 0–95 → ASCII 32–127
     const ch = codeVal + 32;
     out += String.fromCharCode(ch);
-  }
+  };
 
   while (idx <= lastDataIdx) {
     const code = seq[idx++];

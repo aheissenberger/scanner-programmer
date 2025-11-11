@@ -1,13 +1,57 @@
 
-import ProgrammerMode from './components/ProgrammerMode';
+import BarcodeManager from './components/BarcodeManager';
+import ProgramDisplay from './components/ProgramDisplay';
 import { QRTestMode } from './components/QRTestMode';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-type Mode = 'programmer' | 'qrtest';
+type Mode = 'manager' | 'program' | 'qrtest';
+
+type Barcode = {
+  id: string;
+  value: string;
+  note?: string;
+};
 
 function App() {
-  const [mode, setMode] = useState<Mode>('programmer');
+  const [mode, setMode] = useState<Mode>('manager');
   const [qrText, setQrText] = useState('');
+
+  // Shared barcode list state
+  const [barcodes, setBarcodes] = useState<Barcode[]>(() => {
+    const saved = localStorage.getItem('barcode-list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.barcodes)) {
+          return parsed.barcodes;
+        }
+      } catch {
+        // ignore parse error
+      }
+    }
+    return [];
+  });
+
+  // Shared delay state
+  const [delay, setDelay] = useState(() => {
+    const saved = localStorage.getItem('barcode-list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.delay === 'number' && parsed.delay >= 1 && parsed.delay <= 30) {
+          return parsed.delay;
+        }
+      } catch {
+        // ignore parse error
+      }
+    }
+    return 1;
+  });
+
+  // Save barcodes and delay to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('barcode-list', JSON.stringify({ barcodes, delay }));
+  }, [barcodes, delay]);
 
   return (
     <div style={{ maxWidth: 500, margin: '2rem auto', padding: '1rem' }}>
@@ -50,20 +94,39 @@ function App() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: mode === 'programmer' ? '#f6f6f6' : 'none',
+                background: mode === 'manager' ? '#f6f6f6' : 'none',
                 border: 'none',
                 textAlign: 'left',
                 cursor: 'pointer',
-                fontWeight: mode === 'programmer' ? 600 : 400,
+                fontWeight: mode === 'manager' ? 600 : 400,
                 borderRadius: 8,
               }}
               onClick={() => {
-                setMode('programmer');
+                setMode('manager');
                 const menu = document.getElementById('main-menu');
                 if (menu) menu.style.display = 'none';
               }}
             >
-              Programmer Mode
+              Barcode Manager
+            </button>
+            <button
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: mode === 'program' ? '#f6f6f6' : 'none',
+                border: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontWeight: mode === 'program' ? 600 : 400,
+                borderRadius: 8,
+              }}
+              onClick={() => {
+                setMode('program');
+                const menu = document.getElementById('main-menu');
+                if (menu) menu.style.display = 'none';
+              }}
+            >
+              Program Mode
             </button>
             <button
               style={{
@@ -87,8 +150,10 @@ function App() {
           </div>
         </div>
       </nav>
-      {mode === 'programmer' ? (
-        <ProgrammerMode />
+      {mode === 'manager' ? (
+        <BarcodeManager barcodes={barcodes} onBarcodesChange={setBarcodes} />
+      ) : mode === 'program' ? (
+        <ProgramDisplay barcodes={barcodes} delay={delay} onDelayChange={setDelay} />
       ) : (
         <QRTestMode qrText={qrText} setQrText={setQrText} />
       )}
