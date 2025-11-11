@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TrashIcon, Pencil2Icon } from "@radix-ui/react-icons";
+import { Save, FolderOpen, Share2, RotateCcw } from 'lucide-react';
 import { replaceSpecialChars } from '@/lib/utils';
 import { decodeCode128Values } from '@/lib/barcode-decoder';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { BrowserMultiFormatReader } from '@zxing/browser';
+import { generateBarcodeListUrl } from '@/lib/barcodelist2url';
 
 type Barcode = {
   id: string;
@@ -20,9 +22,10 @@ type Barcode = {
 interface BarcodeManagerProps {
   barcodes: Barcode[];
   onBarcodesChange: (barcodes: Barcode[]) => void;
+  delay: number;
 }
 
-function BarcodeManager({ barcodes, onBarcodesChange }: BarcodeManagerProps) {
+function BarcodeManager({ barcodes, onBarcodesChange, delay }: BarcodeManagerProps) {
   // Camera barcode scan state
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -38,6 +41,9 @@ function BarcodeManager({ barcodes, onBarcodesChange }: BarcodeManagerProps) {
 
   // Preview state for clipboard image
   const [clipboardImageUrl, setClipboardImageUrl] = useState<string | null>(null);
+
+  // State for share feedback
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
 
   // Start camera and scan barcode
   const handleStartCameraScan = () => {
@@ -243,6 +249,23 @@ function BarcodeManager({ barcodes, onBarcodesChange }: BarcodeManagerProps) {
     reader.readAsText(file);
   };
 
+  // Share list as URL
+  const handleShare = async () => {
+    try {
+      const shareData = { barcodes, delay };
+      const shareUrl = generateBarcodeListUrl(shareData);
+      
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus('URL copied to clipboard!');
+      
+      // Clear the status message after 3 seconds
+      setTimeout(() => setShareStatus(null), 3000);
+    } catch {
+      setShareStatus('Failed to copy URL to clipboard');
+      setTimeout(() => setShareStatus(null), 3000);
+    }
+  };
+
   return (
     <>
       <h2>Barcode List Manager</h2>
@@ -373,9 +396,31 @@ function BarcodeManager({ barcodes, onBarcodesChange }: BarcodeManagerProps) {
       </Card>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, alignItems: 'center' }}>
-        <Button onClick={handleSave}>Save List</Button>
-        <Button onClick={() => fileInputRef.current?.click()}>Load List</Button>
-        <Button onClick={resetList}>Reset List</Button>
+        <Button onClick={handleSave}>
+          <Save size={16} style={{ marginRight: 6 }} />
+          Save List
+        </Button>
+        <Button onClick={() => fileInputRef.current?.click()}>
+          <FolderOpen size={16} style={{ marginRight: 6 }} />
+          Load List
+        </Button>
+        <Button onClick={handleShare} disabled={barcodes.length === 0}>
+          <Share2 size={16} style={{ marginRight: 6 }} />
+          Share List
+        </Button>
+        <Button onClick={resetList}>
+          <RotateCcw size={16} style={{ marginRight: 6 }} />
+          Reset List
+        </Button>
+        {shareStatus && (
+          <span style={{ 
+            fontSize: '0.9em', 
+            color: shareStatus.includes('Failed') ? '#dc3545' : '#28a745',
+            marginLeft: 8 
+          }}>
+            {shareStatus}
+          </span>
+        )}
         <input
           type="file"
           accept="application/json"

@@ -3,6 +3,7 @@ import BarcodeManager from './components/BarcodeManager';
 import ProgramDisplay from './components/ProgramDisplay';
 import { QRTestMode } from './components/QRTestMode';
 import { useState, useEffect } from 'react';
+import { loadFromCurrentUrl, clearUrlCache } from './lib/barcodelist2url';
 
 type Mode = 'manager' | 'program' | 'qrtest';
 
@@ -17,41 +18,92 @@ function App() {
   const [qrText, setQrText] = useState('');
 
   // Shared barcode list state
-  const [barcodes, setBarcodes] = useState<Barcode[]>(() => {
-    const saved = localStorage.getItem('barcode-list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed.barcodes)) {
-          return parsed.barcodes;
-        }
-      } catch {
-        // ignore parse error
-      }
-    }
-    return [];
-  });
+  const [barcodes, setBarcodes] = useState<Barcode[]>([]);
 
   // Shared delay state
-  const [delay, setDelay] = useState(() => {
-    const saved = localStorage.getItem('barcode-list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.delay === 'number' && parsed.delay >= 1 && parsed.delay <= 30) {
-          return parsed.delay;
-        }
-      } catch {
-        // ignore parse error
-      }
-    }
-    return 1;
-  });
+  const [delay, setDelay] = useState(1);
 
-  // Save barcodes and delay to localStorage whenever they change
+  // Track if initial data has been loaded to prevent localStorage overwrite
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+
+  // Initialize data on mount
   useEffect(() => {
-    localStorage.setItem('barcode-list', JSON.stringify({ barcodes, delay }));
-  }, [barcodes, delay]);
+    // Skip if we've already loaded initial data (prevents double-run in StrictMode)
+    if (initialDataLoaded) {
+      return;
+    }
+
+    const loadInitialData = () => {
+      // Check if URL has compressed data using cached function
+      const urlData = loadFromCurrentUrl();
+      console.log('Loaded data from URL:', urlData);
+      
+      if (urlData) {
+        try {
+          const data = urlData as { barcodes: Barcode[]; delay: number };
+          if (data && Array.isArray(data.barcodes)) {
+            const validDelay = typeof data.delay === 'number' && data.delay >= 1 && data.delay <= 30 ? data.delay : 1;
+            setBarcodes(data.barcodes);
+            setDelay(validDelay);
+            setInitialDataLoaded(true);
+            // Switch to program mode when loading from URL
+            if (data.barcodes.length > 0) {
+              setMode('program');
+            }
+            return;
+          }
+        } catch (error) {
+          // Failed to process URL data, fall back to localStorage
+          console.warn('Failed to process URL data, falling back to localStorage:', error);
+        }
+      }
+
+      // Fall back to localStorage if no URL data or URL parsing failed
+      const saved = localStorage.getItem('barcode-list');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.barcodes)) {
+            const validDelay = typeof parsed.delay === 'number' && parsed.delay >= 1 && parsed.delay <= 30 ? parsed.delay : 1;
+            setBarcodes(parsed.barcodes);
+            setDelay(validDelay);
+            setInitialDataLoaded(true);
+            // Switch to program mode when loading from localStorage with barcodes
+            if (parsed.barcodes.length > 0) {
+              setMode('program');
+            }
+            return;
+          }
+        } catch {
+          console.warn('Failed to parse localStorage data');
+        }
+      }
+      
+      // No data found anywhere, use defaults
+      setBarcodes([]);
+      setDelay(1);
+      setInitialDataLoaded(true);
+    };
+
+    loadInitialData();
+  }, [initialDataLoaded]);
+
+  // Clear the URL after data is loaded (separate effect to avoid timing issues)
+  useEffect(() => {
+    if (initialDataLoaded && window.location.pathname.includes('/bcl/')) {
+      // Clear the URL after loading from it and clear the cache
+      window.history.replaceState({}, '', '/');
+      clearUrlCache();
+    }
+  }, [initialDataLoaded]);
+
+  // Save barcodes and delay to localStorage whenever they change (but only after initial load)
+  useEffect(() => {
+    if (initialDataLoaded) {
+      console.log('Saving barcode list and delay to localStorage');
+      localStorage.setItem('barcode-list', JSON.stringify({ barcodes, delay }));
+    }
+  }, [barcodes, delay, initialDataLoaded]);
 
   return (
     <div style={{ maxWidth: 500, margin: '2rem auto', padding: '1rem' }}>
@@ -151,7 +203,7 @@ function App() {
         </div>
       </nav>
       {mode === 'manager' ? (
-        <BarcodeManager barcodes={barcodes} onBarcodesChange={setBarcodes} />
+        <BarcodeManager barcodes={barcodes} onBarcodesChange={setBarcodes} delay={delay} />
       ) : mode === 'program' ? (
         <ProgramDisplay barcodes={barcodes} delay={delay} onDelayChange={setDelay} />
       ) : (
